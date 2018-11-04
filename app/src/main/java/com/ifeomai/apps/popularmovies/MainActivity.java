@@ -25,28 +25,28 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity implements MovieAdapter.ItemClickListener {
 
 
-    private RecyclerView mRecyclerView;
-    private MovieAdapter mMovieAdapter;
-    private ProgressBar mLoadingIndicator;
-    private TextView mErrorMessageDisplay;
+    private RecyclerView mRecyclerViewMovies;
     private NetworkUtils.SortOrder mSortOrder;
     private static final String SORT_ORDER = "sort_order";
+    private ProgressBar mProgressLoading;
+    private MovieAdapter mMovieAdapter;
+    private TextView mErrorMessageDisplay;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mRecyclerView = findViewById(R.id.rv_movies);
+        mRecyclerViewMovies = findViewById(R.id.rv_movies);
         mErrorMessageDisplay = findViewById(R.id.tv_error_message);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.cols), GridLayout.VERTICAL,false);
-        mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.setHasFixedSize(true);
+        mRecyclerViewMovies.setLayoutManager(layoutManager);
+        mRecyclerViewMovies.setHasFixedSize(true);
         mMovieAdapter = new MovieAdapter();
         mMovieAdapter.setClickListener(this);
-        mRecyclerView.setAdapter(mMovieAdapter);
-        mLoadingIndicator =  findViewById(R.id.pb_loading);
+        mRecyclerViewMovies.setAdapter(mMovieAdapter);
+        mProgressLoading =  findViewById(R.id.pb_loading);
 
         if (savedInstanceState == null) {
             mSortOrder = NetworkUtils.SortOrder.POPULAR;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private void loadMovieData() {
         if (isOnline()){
             showMovieGridView();
-            new FetchMoviesTask().execute(mSortOrder);
+            new GetMoviesAsync().execute(mSortOrder);
         }
         else {
             showErrorMessage();
@@ -79,17 +79,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     public void onItemClick(Movie movie) {
         Context context = this;
         Class destinationClass = DetailActivity.class;
-        Intent intentToStartDetailActivity = new Intent(context, destinationClass);
-        intentToStartDetailActivity.putExtra("Movie", movie);
-        startActivity(intentToStartDetailActivity);
+        Intent intentStartDetail = new Intent(context, destinationClass);
+        intentStartDetail.putExtra("Movie", movie);
+        startActivity(intentStartDetail);
     }
 
 
-    public class FetchMoviesTask extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
+    public class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mLoadingIndicator.setVisibility(View.VISIBLE);
+            mProgressLoading.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         @Override
         protected void onPostExecute(List<Map<String,String>> moviesCollection) {
 
-            mLoadingIndicator.setVisibility(View.INVISIBLE);
+            mProgressLoading.setVisibility(View.INVISIBLE);
             if (moviesCollection != null) {
                 showMovieGridView();
                 List<Movie> movieData = Movie.createMovies(moviesCollection);
@@ -114,11 +114,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
 
     private void showMovieGridView() {
         mErrorMessageDisplay.setVisibility(View.INVISIBLE);
-        mRecyclerView.setVisibility(View.VISIBLE);
+        mRecyclerViewMovies.setVisibility(View.VISIBLE);
     }
 
     private void showErrorMessage() {
-        mRecyclerView.setVisibility(View.INVISIBLE);
+        mRecyclerViewMovies.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.VISIBLE);
     }
 

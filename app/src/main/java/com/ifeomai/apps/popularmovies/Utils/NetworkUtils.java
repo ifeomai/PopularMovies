@@ -21,13 +21,9 @@ import java.util.Scanner;
 public class NetworkUtils {
 
     private static final String TAG = NetworkUtils.class.getSimpleName();
-
     private static String IMAGE_URL_PREFIX = "https://image.tmdb.org/t/p/w185";
-
     private static String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/movie/";
-
     private static String API_KEY = "";
-
     final static String LANG_PARAM = "language";
     final static String LANG = "en-US";
     final static String PAGE_PARAM = "page";
@@ -49,13 +45,6 @@ public class NetworkUtils {
         }
     }
 
-    /**
-     * Returns the collection of movie records obtained via the TMDb API
-     * This is return as a list of maps, each map is a key value pair.
-     *
-     * @param order The sort order for the results, either by rating or popularity.
-     * @return The collection of movie records
-     */
     public static List<Map<String,String>> getMovies(SortOrder order) {
 
         String jsonResponse = null;
@@ -67,54 +56,41 @@ public class NetworkUtils {
             return null;
         }
 
-        return parseTMDbJSON(jsonResponse);
+        return parseMovieDbJSON(jsonResponse);
     }
 
-    /**
-     * Parses the JSON string obtained via an http request
-     *
-     * @param jsonString The JSON from the 'discover' api
-     * @return The collection of movie records
-     */
-    public static List<Map<String,String>> parseTMDbJSON(String jsonString) {
+    public static List<Map<String,String>> parseMovieDbJSON(String jsonString) {
 
         List<Map<String,String>> movieCollection = new ArrayList<>();
         JSONObject jObject = null;
 
         try {
-            Map<String, String> movieMap;
+            Map<String, String> mapMovieData;
             jObject = new JSONObject(jsonString);
-            JSONArray movieResultsList = jObject.getJSONArray("results");
+            JSONArray ReturnedMovieList = jObject.getJSONArray("results");
 
-            for(int i=0;i<movieResultsList.length();i++){
-                JSONObject movieJSON = movieResultsList.getJSONObject(i);
+            for(int i=0;i<ReturnedMovieList.length();i++){
+                JSONObject movieJSON = ReturnedMovieList.getJSONObject(i);
 
-                movieMap = new HashMap<>();
-                movieMap.put("title",movieJSON.getString("original_title"));
-                movieMap.put("poster",IMAGE_URL_PREFIX + movieJSON.getString("poster_path"));
-                movieMap.put("overview",movieJSON.getString("overview"));
-                movieMap.put("rating",String.valueOf(movieJSON.getDouble("vote_average")));
-                movieMap.put("releaseDate",movieJSON.getString("release_date"));
+                mapMovieData = new HashMap<>();
+                mapMovieData.put("rating",String.valueOf(movieJSON.getDouble("vote_average")));
+                mapMovieData.put("poster",IMAGE_URL_PREFIX + movieJSON.getString("poster_path"));
+                mapMovieData.put("title",movieJSON.getString("original_title"));
+                mapMovieData.put("releaseDate",movieJSON.getString("release_date"));
+                mapMovieData.put("overview",movieJSON.getString("overview"));
 
-                movieCollection.add(movieMap);
+                movieCollection.add(mapMovieData);
 
             }
-
         }
         catch(Exception e){
-            Log.d("NetTalk","something went wrong: "+ e.toString());
+            Log.d("NetworkError","something went wrong: "+ e.toString());
             return null;
         }
 
         return movieCollection;
     }
 
-
-    /**
-     * Builds the URL used to talk to the TMDb api.
-     * @param order The sort order for the results, either by rating or popularity.
-     * @return The URL to use to query TMDb.
-     */
     public static URL buildUrl(SortOrder order) {
 
         Uri builtUri = Uri.parse(MOVIEDB_BASE_URL +order.getSortOrderString()).buildUpon()
@@ -135,13 +111,6 @@ public class NetworkUtils {
         return url;
     }
 
-    /**
-     * This method returns the entire result from the HTTP response.
-     *
-     * @param url The URL to fetch the HTTP response from.
-     * @return The contents of the HTTP response.
-     * @throws IOException Related to network and stream reading
-     */
     public static String getResponseFromHttpUrl(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
