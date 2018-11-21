@@ -141,7 +141,7 @@ public class NetworkUtils {
         //get reviews
         try {
             URL url = new URL(MOVIEDB_BASE_URL + MovieId + "/reviews" + "?api_key=" + API_KEY);
-           urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
 
@@ -187,4 +187,64 @@ public class NetworkUtils {
         return null;
     }
 
+    public static Trailer getTrailers(String MovieId){
+        HttpURLConnection urlConnection = null;
+        BufferedReader reader = null;
+        //get reviews
+        try {
+            URL url = new URL(MOVIEDB_BASE_URL + MovieId + "/videos" + "?api_key=" + API_KEY);
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+
+            InputStream inputStream = urlConnection.getInputStream();
+            StringBuffer buffer = new StringBuffer();
+            if (inputStream == null) {
+                return null;
+            }
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line + "\n");
+            }
+            if (buffer.length() == 0) {
+                return null;
+            }
+            String trailerJsonStr = buffer.toString();
+
+            JSONObject main = new JSONObject(trailerJsonStr);
+
+            String results = main.getString("results");
+            JSONArray trailers = new JSONArray(results);
+            int trailer_count = trailers.length();
+            String[] youtube_ids = null ;
+            //Ensure there is at least one trailer
+            if (trailer_count != 0) {
+                youtube_ids = new String[trailer_count];
+                for (int i = 0; i < trailer_count; i++) {
+                    JSONObject obj = trailers.getJSONObject(i);
+                    youtube_ids[i] = obj.getString("key");
+                }
+            }
+            Trailer data = new Trailer( youtube_ids,trailer_count);
+            return  data;
+
+
+        } catch (Exception e) {
+            // Log.e(LOG_TAG, "Error", e);
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (final IOException e) {
+                    // Log.e(LOG_TAG, "Error closing stream", e);
+                }
+            }
+        }
+
+        return null;
+    }
 }

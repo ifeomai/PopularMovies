@@ -1,11 +1,13 @@
 package com.ifeomai.apps.popularmovies;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -17,9 +19,11 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ifeomai.apps.popularmovies.Utils.NetworkUtils;
 import com.ifeomai.apps.popularmovies.Utils.Review;
+import com.ifeomai.apps.popularmovies.Utils.Trailer;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -27,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,7 +39,7 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DetailActivity extends AppCompatActivity implements View.OnClickListener {
+public class DetailActivity extends AppCompatActivity  {
 
     private TextView mOverviewDisplay;
     private TextView mTitle;
@@ -43,6 +48,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     private TextView mRating;
     private Movie movie;
     private LinearLayout mRootLinearLayout;
+    private String mMovieId ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +75,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
                 mTitle.setText(movie.mTitle);
                 mRating.setText(movie.mUserRating);
                 mRelease.setText(movie.mReleaseDate);
+                mMovieId = movie.mMovieId;
 
                 Context context = this;
                 Picasso.with(context).load(movie.mPosterURL).into(mPoster);
@@ -79,11 +86,33 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+//    @Override
+//    public void onClick(View v) {
+//
+//    }
 
-    @Override
-    public void onClick(View v) {
-
-    }
+//    public void addToFavorites() {
+//        ContentValues values = new ContentValues();
+//        values.put(FavoritesProvider._ID, mMovieId);
+//        values.put(FavoritesProvider.TITLE, mTitle.getText().toString());
+//        values.put(FavoritesProvider.SYNOPSIS, mOverviewDisplay.getText().toString());
+//        values.put(FavoritesProvider.USER_RATING, mRating.getText().toString());
+//        values.put(FavoritesProvider.RELEASE_DATE, mRelease.getText().toString());
+////
+////        BitmapDrawable drawable = (BitmapDrawable) poster_image.getDrawable();
+////        Bitmap bmp = drawable.getBitmap();
+////        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+////        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+////        byte[] image = stream.toByteArray();
+////        values.put(FavoritesProvider.POSTER, image);
+//
+//        Uri uri = getContext().getContentResolver().insert(FavoritesProvider.CONTENT_URI, values);
+//
+//        if(uri.toString().equals("Duplicate"))
+//            Toast.makeText(getContext(), R.string.fav_exists, Toast.LENGTH_SHORT).show();
+//        else
+//            Toast.makeText(getContext(), R.string.fav_success, Toast.LENGTH_SHORT).show();
+//    }
 
     static class FetchMovieDetailsAsync extends AsyncTask<Void, Void, Void> {
 
@@ -91,6 +120,9 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
         JSONArray reviews;
         int review_count;
+
+        String[] youtube_ids;
+        int trailer_count;
 
         private final WeakReference<DetailActivity> activityReference;
 
@@ -104,10 +136,16 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             DetailActivity activity = activityReference.get();
             if (activity == null || activity.isFinishing()) return null;
 
+            // get Trailer
+            Trailer returnedTrailers = NetworkUtils.getTrailers(activity.movie.mMovieId);
+            youtube_ids = returnedTrailers.mYoutube_ids;
+            trailer_count = returnedTrailers.mTrailer_count;
+
             //get reviews
             Review returnedReviews = NetworkUtils.getReviews(activity.movie.mMovieId);
             reviews = returnedReviews.mReviewArray;
             review_count = returnedReviews.mReviewCount;
+
 
             return null;
         }
@@ -118,6 +156,50 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
             // get a reference to the activity if it is still there
             DetailActivity activity = activityReference.get();
             if (activity == null || activity.isFinishing()) return;
+
+            //Ensure there is at least one trailer
+            if (trailer_count != 0) {
+
+                //share.setVisibility(View.VISIBLE); //share button visible
+
+                activity.mRootLinearLayout.addView(createLineView());
+
+
+                for (int i = 0; i < trailer_count; i++) {
+                    Button b = new Button(activity);
+                    LinearLayout.LayoutParams b_params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    b_params.setMargins(30, 10, 20, 20);
+                    b.setLayoutParams(b_params);
+                    b.setText("Watch Trailer " + Integer.toString(i + 1));
+                    b.setId(i + 1001);
+                    b.setBackgroundColor(activity.getResources().getColor(R.color.colorPrimary));
+                    b.setTextColor(activity.getResources().getColor(R.color.white));
+                    b.setTextSize(18);
+                    b.setPadding(20, 10, 20, 10);
+                    b.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            String youtube_id = youtube_ids[view.getId()];
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + youtube_id));
+                                view.getContext().startActivity(intent);
+                            } catch (ActivityNotFoundException e) {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + youtube_id));
+                                String title = "Watch video via";
+                                Intent chooser = Intent.createChooser(intent, title);
+                                if (intent.resolveActivity(view.getContext().getPackageManager()) != null) {
+                                    view.getContext().startActivity(chooser);
+                                }
+                            }
+
+                        }
+                    });
+                    activity.mRootLinearLayout.addView(b);
+                }
+            } else {
+                //share.setVisibility(View.INVISIBLE); //share button invisible
+            }
 
             //Ensure there is at least one review
             if (review_count != 0) {
