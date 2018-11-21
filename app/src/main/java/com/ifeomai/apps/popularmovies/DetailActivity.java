@@ -4,10 +4,6 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -28,18 +24,10 @@ import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
-public class DetailActivity extends AppCompatActivity  {
+public class DetailActivity extends AppCompatActivity {
 
     private TextView mOverviewDisplay;
     private TextView mTitle;
@@ -49,6 +37,8 @@ public class DetailActivity extends AppCompatActivity  {
     private Movie movie;
     private LinearLayout mRootLinearLayout;
     private String mMovieId ;
+    private  String mPosterUrl;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +51,13 @@ public class DetailActivity extends AppCompatActivity  {
         mTitle =  findViewById(R.id.tv_display_movie_title);
         mRootLinearLayout = findViewById(R.id.ll_root);
 
+        Button mMarkFavoriteButton = findViewById(R.id.markFavorite_button);
+        mMarkFavoriteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addToFavorites();
+            }
+        });
         setupUI();
     }
 
@@ -78,6 +75,7 @@ public class DetailActivity extends AppCompatActivity  {
                 mMovieId = movie.mMovieId;
 
                 Context context = this;
+                mPosterUrl = movie.mPosterURL;
                 Picasso.with(context).load(movie.mPosterURL).into(mPoster);
 
                 //Load reviews
@@ -91,28 +89,29 @@ public class DetailActivity extends AppCompatActivity  {
 //
 //    }
 
-//    public void addToFavorites() {
-//        ContentValues values = new ContentValues();
-//        values.put(FavoritesProvider._ID, mMovieId);
-//        values.put(FavoritesProvider.TITLE, mTitle.getText().toString());
-//        values.put(FavoritesProvider.SYNOPSIS, mOverviewDisplay.getText().toString());
-//        values.put(FavoritesProvider.USER_RATING, mRating.getText().toString());
-//        values.put(FavoritesProvider.RELEASE_DATE, mRelease.getText().toString());
-////
-////        BitmapDrawable drawable = (BitmapDrawable) poster_image.getDrawable();
-////        Bitmap bmp = drawable.getBitmap();
-////        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-////        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-////        byte[] image = stream.toByteArray();
-////        values.put(FavoritesProvider.POSTER, image);
+    private void addToFavorites() {
+        ContentValues values = new ContentValues();
+        values.put(FavoritesProvider._ID, mMovieId);
+        values.put(FavoritesProvider.TITLE, mTitle.getText().toString());
+        values.put(FavoritesProvider.SYNOPSIS, mOverviewDisplay.getText().toString());
+        values.put(FavoritesProvider.USER_RATING, mRating.getText().toString());
+        values.put(FavoritesProvider.RELEASE_DATE, mRelease.getText().toString());
+        values.put(FavoritesProvider.POSTER_URL,mPosterUrl);
 //
-//        Uri uri = getContext().getContentResolver().insert(FavoritesProvider.CONTENT_URI, values);
-//
-//        if(uri.toString().equals("Duplicate"))
-//            Toast.makeText(getContext(), R.string.fav_exists, Toast.LENGTH_SHORT).show();
-//        else
-//            Toast.makeText(getContext(), R.string.fav_success, Toast.LENGTH_SHORT).show();
-//    }
+//        BitmapDrawable drawable = (BitmapDrawable) poster_image.getDrawable();
+//        Bitmap bmp = drawable.getBitmap();
+//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+//        byte[] image = stream.toByteArray();
+//        values.put(FavoritesProvider.POSTER, image);
+
+        Uri uri = DetailActivity.this.getContentResolver().insert(FavoritesProvider.CONTENT_URI, values);
+
+        if(uri != null && uri.toString().equals("Duplicate"))
+            Toast.makeText(DetailActivity.this, R.string.fav_exists, Toast.LENGTH_SHORT).show();
+        else
+            Toast.makeText(DetailActivity.this, R.string.fav_success, Toast.LENGTH_SHORT).show();
+    }
 
     static class FetchMovieDetailsAsync extends AsyncTask<Void, Void, Void> {
 
@@ -138,12 +137,12 @@ public class DetailActivity extends AppCompatActivity  {
 
             // get Trailer
             Trailer returnedTrailers = NetworkUtils.getTrailers(activity.movie.mMovieId);
-            youtube_ids = returnedTrailers.mYoutube_ids;
+            youtube_ids = returnedTrailers != null ? returnedTrailers.mYoutube_ids : new String[0];
             trailer_count = returnedTrailers.mTrailer_count;
 
             //get reviews
             Review returnedReviews = NetworkUtils.getReviews(activity.movie.mMovieId);
-            reviews = returnedReviews.mReviewArray;
+            reviews = returnedReviews != null ? returnedReviews.mReviewArray : null;
             review_count = returnedReviews.mReviewCount;
 
 
@@ -160,8 +159,6 @@ public class DetailActivity extends AppCompatActivity  {
             //Ensure there is at least one trailer
             if (trailer_count != 0) {
 
-                //share.setVisibility(View.VISIBLE); //share button visible
-
                 activity.mRootLinearLayout.addView(createLineView());
 
 
@@ -171,7 +168,7 @@ public class DetailActivity extends AppCompatActivity  {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     b_params.setMargins(30, 10, 20, 20);
                     b.setLayoutParams(b_params);
-                    b.setText("Watch Trailer " + Integer.toString(i + 1));
+                    b.setText(String.format("Watch Trailer %s", Integer.toString(i + 1)));
                     b.setId(i + 1001);
                     b.setBackgroundColor(activity.getResources().getColor(R.color.colorPrimary));
                     b.setTextColor(activity.getResources().getColor(R.color.white));
@@ -197,8 +194,6 @@ public class DetailActivity extends AppCompatActivity  {
                     });
                     activity.mRootLinearLayout.addView(b);
                 }
-            } else {
-                //share.setVisibility(View.INVISIBLE); //share button invisible
             }
 
             //Ensure there is at least one review
@@ -237,7 +232,7 @@ public class DetailActivity extends AppCompatActivity  {
         }
 
 
-        public View createLineView() {
+        View createLineView() {
             // get a reference to the activity if it is still there
             DetailActivity activity = activityReference.get();
             if (activity == null || activity.isFinishing()) return null;

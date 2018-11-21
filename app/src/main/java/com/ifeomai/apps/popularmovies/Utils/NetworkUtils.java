@@ -146,14 +146,14 @@ public class NetworkUtils {
             urlConnection.connect();
 
             InputStream inputStream = urlConnection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             if (inputStream == null) {
                 return null;
             }
             reader = new BufferedReader(new InputStreamReader(inputStream));
             String line;
             while ((line = reader.readLine()) != null) {
-                buffer.append(line + "\n");
+                buffer.append(line).append("\n");
             }
             if (buffer.length() == 0) {
                 return null;
@@ -165,9 +165,8 @@ public class NetworkUtils {
             String results = main.getString("results");
             JSONArray reviews = new JSONArray(results);
             int review_count = main.getInt("total_results");
-            Review review = new Review(reviews,review_count);
 
-            return  review;
+            return new Review(reviews,review_count);
 
         } catch (Exception e) {
             // Log.e(LOG_TAG, "Error", e);
@@ -198,14 +197,14 @@ public class NetworkUtils {
             urlConnection.connect();
 
             InputStream inputStream = urlConnection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             if (inputStream == null) {
                 return null;
             }
             reader = new BufferedReader(new InputStreamReader(inputStream));
             String line;
             while ((line = reader.readLine()) != null) {
-                buffer.append(line + "\n");
+                buffer.append(line).append("\n");
             }
             if (buffer.length() == 0) {
                 return null;
@@ -226,8 +225,7 @@ public class NetworkUtils {
                     youtube_ids[i] = obj.getString("key");
                 }
             }
-            Trailer data = new Trailer( youtube_ids,trailer_count);
-            return  data;
+            return new Trailer( youtube_ids,trailer_count);
 
 
         } catch (Exception e) {

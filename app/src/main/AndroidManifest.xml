@@ -25,7 +25,12 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
+
         </activity>
+        <provider android:name=".FavoritesProvider"
+            android:authorities="com.ifeomai.apps.popularmovies"
+            android:exported="false">
+        </provider>
 
     </application>
 

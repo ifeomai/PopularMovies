@@ -8,4 +8,6 @@
     <string name="image_description">Movie Poster image</string>
     <string name="action_share">Mark as Favourite</string>
     <string name="reviews">Reviews</string>
+    <string name="fav_success">Added to favorites successfully!</string>
+    <string name="fav_exists">Already exists in favorites!</string>
 </resources>
