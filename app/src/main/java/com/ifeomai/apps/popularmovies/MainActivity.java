@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.ifeomai.apps.popularmovies.Utils.NetworkUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private void loadMovieData() {
         if (isOnline()){
             showMovieGridView();
-            new GetMoviesAsync().execute(mSortOrder);
+            new GetMoviesAsync(this).execute(mSortOrder);
         }
         else {
             showErrorMessage();
@@ -85,11 +86,28 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     }
 
 
-    public class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
+    static class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
+
+        private final WeakReference<MainActivity> activityReference;
+
+        // only retain a weak reference to the activity
+        GetMoviesAsync(MainActivity context) {
+            activityReference = new WeakReference<>(context);
+        }
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mProgressLoading.setVisibility(View.VISIBLE);
+
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return;
+
+            // modify the activity's UI
+            // TextView textView = activity.findViewById(R.id.textview);
+            //textView.setText(result);
+
+            activity.mProgressLoading.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -100,13 +118,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         @Override
         protected void onPostExecute(List<Map<String,String>> moviesCollection) {
 
-            mProgressLoading.setVisibility(View.INVISIBLE);
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return;
+
+            activity.mProgressLoading.setVisibility(View.INVISIBLE);
             if (moviesCollection != null) {
-                showMovieGridView();
+                activity.showMovieGridView();
                 List<Movie> movieData = Movie.createMovies(moviesCollection);
-                mMovieAdapter.setMovieData(movieData);
+                activity.mMovieAdapter.setMovieData(movieData);
             } else {
-                showErrorMessage();
+                activity.showErrorMessage();
             }
         }
 
@@ -154,12 +176,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         return super.onOptionsItemSelected(item);
     }
 
-    public boolean isOnline() {
+    private boolean isOnline() {
         Context context = this;
 
         ConnectivityManager cm =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
+        assert cm != null;
         return cm.getActiveNetworkInfo() != null &&
                 cm.getActiveNetworkInfo().isConnectedOrConnecting();
     }

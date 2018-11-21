@@ -8,6 +8,7 @@
 /build
 /captures
 .externalNativeBuild
+/gradle.properties
 
 
 # Built application files

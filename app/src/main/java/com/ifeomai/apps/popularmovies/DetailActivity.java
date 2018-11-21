@@ -11,7 +11,6 @@ import com.squareup.picasso.Picasso;
 
 public class DetailActivity extends AppCompatActivity {
 
-    private Movie movie;
     private TextView mOverviewDisplay;
     private TextView mTitle;
     private ImageView mPoster;
@@ -29,11 +28,16 @@ public class DetailActivity extends AppCompatActivity {
         mPoster =  findViewById(R.id.iv_detail_poster);
         mTitle =  findViewById(R.id.tv_display_movie_title);
 
+        setupUI();
+    }
+
+    private void setupUI(){
         Intent intentStartActivity = getIntent();
 
         if (intentStartActivity != null) {
-            if (intentStartActivity.hasExtra("Movie")) {
-                movie = (Movie) intentStartActivity.getSerializableExtra("Movie");
+            Bundle extras = intentStartActivity.getExtras();
+            if (extras != null && intentStartActivity.hasExtra("Movie")) {
+                Movie movie = (Movie) intentStartActivity.getSerializableExtra("Movie");
                 mOverviewDisplay.setText(movie.mOverview);
                 mTitle.setText(movie.mTitle);
                 mRating.setText(movie.mUserRating);
@@ -44,5 +48,4 @@ public class DetailActivity extends AppCompatActivity {
             }
         }
     }
-
 }
