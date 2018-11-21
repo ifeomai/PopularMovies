@@ -6,4 +6,6 @@
     <string name="sort_popular_toast">Sort by popular</string>
     <string name="sort_rating_toast">Sort by rating</string>
     <string name="image_description">Movie Poster image</string>
+    <string name="action_share">Mark as Favourite</string>
+    <string name="reviews">Reviews</string>
 </resources>

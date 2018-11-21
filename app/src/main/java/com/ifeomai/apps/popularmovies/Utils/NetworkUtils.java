@@ -8,8 +8,10 @@ import com.ifeomai.apps.popularmovies.BuildConfig;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,7 +27,7 @@ public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName();
     private static final String IMAGE_URL_PREFIX = "https://image.tmdb.org/t/p/w185";
     private static final String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/movie/";
-    private static final  String API_KEY = BuildConfig.MOVIE_API_KEY;
+    private static final String API_KEY = BuildConfig.MOVIE_API_KEY;
     private final static String LANG_PARAM = "language";
     private final static String LANG = "en-US";
     private final static String PAGE_PARAM = "page";
@@ -80,6 +82,7 @@ public class NetworkUtils {
                 mapMovieData.put("title",movieJSON.getString("original_title"));
                 mapMovieData.put("releaseDate",movieJSON.getString("release_date"));
                 mapMovieData.put("overview",movieJSON.getString("overview"));
+                mapMovieData.put("id",movieJSON.getString("id"));
 
                 movieCollection.add(mapMovieData);
 
@@ -130,6 +133,58 @@ public class NetworkUtils {
         } finally {
             urlConnection.disconnect();
         }
+    }
+
+    public static Review getReviews(String MovieId){
+        HttpURLConnection urlConnection = null;
+        BufferedReader reader = null;
+        //get reviews
+        try {
+            URL url = new URL(MOVIEDB_BASE_URL + MovieId + "/reviews" + "?api_key=" + API_KEY);
+           urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+
+            InputStream inputStream = urlConnection.getInputStream();
+            StringBuffer buffer = new StringBuffer();
+            if (inputStream == null) {
+                return null;
+            }
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line + "\n");
+            }
+            if (buffer.length() == 0) {
+                return null;
+            }
+            String reviewJsonStr = buffer.toString();
+
+            JSONObject main = new JSONObject(reviewJsonStr);
+
+            String results = main.getString("results");
+            JSONArray reviews = new JSONArray(results);
+            int review_count = main.getInt("total_results");
+            Review review = new Review(reviews,review_count);
+
+            return  review;
+
+        } catch (Exception e) {
+            // Log.e(LOG_TAG, "Error", e);
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (final IOException e) {
+                    // Log.e(LOG_TAG, "Error closing stream", e);
+                }
+            }
+        }
+
+        return null;
     }
 
 }
