@@ -3,6 +3,8 @@ package com.ifeomai.apps.popularmovies.Utils;
 import android.net.Uri;
 import android.util.Log;
 
+import com.ifeomai.apps.popularmovies.BuildConfig;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,14 +23,14 @@ import java.util.Scanner;
 public class NetworkUtils {
 
     private static final String TAG = NetworkUtils.class.getSimpleName();
-    private static String IMAGE_URL_PREFIX = "https://image.tmdb.org/t/p/w185";
-    private static String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/movie/";
-    private static String API_KEY = "";
-    final static String LANG_PARAM = "language";
-    final static String LANG = "en-US";
-    final static String PAGE_PARAM = "page";
-    final static String PAGE = "1";
-    final static String KEY_PARAM = "api_key";
+    private static final String IMAGE_URL_PREFIX = "https://image.tmdb.org/t/p/w185";
+    private static final String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/movie/";
+    private static final  String API_KEY = BuildConfig.MOVIE_API_KEY;
+    private final static String LANG_PARAM = "language";
+    private final static String LANG = "en-US";
+    private final static String PAGE_PARAM = "page";
+    private final static String PAGE = "1";
+    private final static String KEY_PARAM = "api_key";
 
 
     public enum SortOrder {
@@ -40,14 +42,14 @@ public class NetworkUtils {
             sortOrderString = s;
         }
 
-        public String getSortOrderString() {
+        String getSortOrderString() {
             return sortOrderString;
         }
     }
 
     public static List<Map<String,String>> getMovies(SortOrder order) {
 
-        String jsonResponse = null;
+        String jsonResponse ;
         try {
             jsonResponse = getResponseFromHttpUrl(buildUrl(order));
         } catch (IOException e) {
@@ -59,10 +61,10 @@ public class NetworkUtils {
         return parseMovieDbJSON(jsonResponse);
     }
 
-    public static List<Map<String,String>> parseMovieDbJSON(String jsonString) {
+    private static List<Map<String,String>> parseMovieDbJSON(String jsonString) {
 
         List<Map<String,String>> movieCollection = new ArrayList<>();
-        JSONObject jObject = null;
+        JSONObject jObject ;
 
         try {
             Map<String, String> mapMovieData;
@@ -91,7 +93,7 @@ public class NetworkUtils {
         return movieCollection;
     }
 
-    public static URL buildUrl(SortOrder order) {
+    private static URL buildUrl(SortOrder order) {
 
         Uri builtUri = Uri.parse(MOVIEDB_BASE_URL +order.getSortOrderString()).buildUpon()
                 .appendQueryParameter(KEY_PARAM, API_KEY)
@@ -111,7 +113,7 @@ public class NetworkUtils {
         return url;
     }
 
-    public static String getResponseFromHttpUrl(URL url) throws IOException {
+    private static String getResponseFromHttpUrl(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
             InputStream in = urlConnection.getInputStream();
