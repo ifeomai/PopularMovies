@@ -2,7 +2,9 @@ package com.ifeomai.apps.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,6 +22,8 @@ import android.widget.Toast;
 import com.ifeomai.apps.popularmovies.Utils.NetworkUtils;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,6 +116,12 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
 
         @Override
         protected List<Map<String,String>> doInBackground(NetworkUtils.SortOrder... sortOrder) {
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return null;
+            if(activity.mSortOrder == NetworkUtils.SortOrder.FAVORITES) {
+                return getFavoriteCollection();
+            }
             return NetworkUtils.getMovies(sortOrder[0]);
         }
 
@@ -132,6 +142,39 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
             }
         }
 
+        List<Map<String, String>> getFavoriteCollection(){
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return null;
+
+            List<Map<String,String>> movieCollection = new ArrayList<>();
+
+            Uri favorites = Uri.parse("content://com.ifeomai.apps.popularmovies/favorites");
+            Cursor c = activity.getContentResolver().query(favorites, null, null, null, "_id");
+            try{
+                if (c.getCount() == 0){
+                    return null;
+                }
+            if(c.moveToFirst()) {
+                do {
+                    Map<String, String> mapMovieData = new HashMap<>();
+                    mapMovieData.put("rating", c.getString(c.getColumnIndex(FavoritesProvider.USER_RATING)));
+                    mapMovieData.put("poster", c.getString(c.getColumnIndex(FavoritesProvider.POSTER_URL)));
+                    mapMovieData.put("title", c.getString(c.getColumnIndex(FavoritesProvider.TITLE)));
+                    mapMovieData.put("releaseDate", c.getString(c.getColumnIndex(FavoritesProvider.RELEASE_DATE)));
+                    mapMovieData.put("overview", c.getString(c.getColumnIndex(FavoritesProvider.SYNOPSIS)));
+                    mapMovieData.put("id", c.getString(c.getColumnIndex(FavoritesProvider._ID)));
+
+                    movieCollection.add(mapMovieData);
+
+                } while (c.moveToNext());
+            }
+            } finally {
+                c.close();
+            }
+
+            return movieCollection;
+        }
     }
 
     private void showMovieGridView() {
@@ -156,21 +199,31 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_sort_popular) {
-            mSortOrder = NetworkUtils.SortOrder.POPULAR;
-            Context context = this;
-            Toast.makeText(context, getString(R.string.sort_popular_toast), Toast.LENGTH_SHORT)
-                    .show();
-            loadMovieData();
-            return true;
-        }
-        else if (id == R.id.action_sort_rating) {
-            mSortOrder = NetworkUtils.SortOrder.RATING;
-            Context context = this;
-            Toast.makeText(context, getString(R.string.sort_rating_toast), Toast.LENGTH_SHORT)
-                    .show();
-            loadMovieData();
-            return true;
+        switch (id) {
+            case R.id.action_sort_popular: {
+                mSortOrder = NetworkUtils.SortOrder.POPULAR;
+                Context context = this;
+                Toast.makeText(context, getString(R.string.sort_popular_toast), Toast.LENGTH_SHORT)
+                        .show();
+                loadMovieData();
+                return true;
+            }
+            case R.id.action_sort_rating: {
+                mSortOrder = NetworkUtils.SortOrder.RATING;
+                Context context = this;
+                Toast.makeText(context, getString(R.string.sort_rating_toast), Toast.LENGTH_SHORT)
+                        .show();
+                loadMovieData();
+                return true;
+            }
+            case R.id.action_show_favorites: {
+                mSortOrder = NetworkUtils.SortOrder.FAVORITES;
+                Context context = this;
+                Toast.makeText(context, getString(R.string.show_favorites_toast), Toast.LENGTH_SHORT)
+                        .show();
+                loadMovieData();
+                return true;
+            }
         }
 
         return super.onOptionsItemSelected(item);

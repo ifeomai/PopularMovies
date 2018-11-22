@@ -36,7 +36,7 @@ public class NetworkUtils {
 
 
     public enum SortOrder {
-        POPULAR("popular"), RATING("top_rated");
+        POPULAR("popular"), RATING("top_rated"), FAVORITES("favorites");
 
         private String sortOrderString;
 

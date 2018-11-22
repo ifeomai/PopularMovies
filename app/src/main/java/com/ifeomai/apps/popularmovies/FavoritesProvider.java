@@ -18,8 +18,8 @@ public class FavoritesProvider extends ContentProvider {
 
     private static final String PROVIDER_NAME = "com.ifeomai.apps.popularmovies";
     private static final String URL = "content://" + PROVIDER_NAME + "/favorites";
-    static final Uri CONTENT_URI = Uri.parse(URL);
 
+    static final Uri CONTENT_URI = Uri.parse(URL);
     static final String _ID = "_id";
     static final String TITLE = "title";
     static final String SYNOPSIS = "synopsis";
