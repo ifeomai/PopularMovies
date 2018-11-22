@@ -19,7 +19,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ifeomai.apps.popularmovies.Utils.NetworkUtils;
+import com.ifeomai.apps.popularmovies.utils.NetworkUtils;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

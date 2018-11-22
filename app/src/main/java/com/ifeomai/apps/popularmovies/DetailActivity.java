@@ -17,9 +17,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ifeomai.apps.popularmovies.Utils.NetworkUtils;
-import com.ifeomai.apps.popularmovies.Utils.Review;
-import com.ifeomai.apps.popularmovies.Utils.Trailer;
+import com.ifeomai.apps.popularmovies.utils.NetworkUtils;
+import com.ifeomai.apps.popularmovies.utils.Review;
+import com.ifeomai.apps.popularmovies.utils.Trailer;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
