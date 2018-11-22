@@ -1,4 +1,4 @@
-package com.ifeomai.apps.popularmovies.Utils;
+package com.ifeomai.apps.popularmovies.utils;
 
 import android.net.Uri;
 import android.util.Log;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 
-public class NetworkUtils {
+public final class NetworkUtils {
 
     private static final String TAG = NetworkUtils.class.getSimpleName();
     private static final String IMAGE_URL_PREFIX = "https://image.tmdb.org/t/p/w185";
