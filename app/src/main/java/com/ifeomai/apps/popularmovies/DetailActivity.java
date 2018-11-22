@@ -1,6 +1,7 @@
 package com.ifeomai.apps.popularmovies;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -97,19 +98,14 @@ public class DetailActivity extends AppCompatActivity {
         values.put(FavoritesProvider.USER_RATING, mRating.getText().toString());
         values.put(FavoritesProvider.RELEASE_DATE, mRelease.getText().toString());
         values.put(FavoritesProvider.POSTER_URL,mPosterUrl);
-//
-//        BitmapDrawable drawable = (BitmapDrawable) poster_image.getDrawable();
-//        Bitmap bmp = drawable.getBitmap();
-//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-//        byte[] image = stream.toByteArray();
-//        values.put(FavoritesProvider.POSTER, image);
 
-        Uri uri = DetailActivity.this.getContentResolver().insert(FavoritesProvider.CONTENT_URI, values);
+        ContentResolver cr = DetailActivity.this.getContentResolver();
+        Uri uri = cr.insert(FavoritesProvider.CONTENT_URI, values);
 
-        if(uri != null && uri.toString().equals("Duplicate"))
+        if(uri != null && uri.toString().equals("Duplicate")) {
+            cr.delete(FavoritesProvider.CONTENT_URI, "_id=?", new String[]{mMovieId});
             Toast.makeText(DetailActivity.this, R.string.fav_exists, Toast.LENGTH_SHORT).show();
-        else
+        } else
             Toast.makeText(DetailActivity.this, R.string.fav_success, Toast.LENGTH_SHORT).show();
     }
 

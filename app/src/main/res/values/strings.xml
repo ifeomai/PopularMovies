@@ -9,7 +9,7 @@
     <string name="action_share">Mark as Favourite</string>
     <string name="reviews">Reviews</string>
     <string name="fav_success">Added to favorites successfully!</string>
-    <string name="fav_exists">Already exists in favorites!</string>
+    <string name="fav_exists">Removed from favorites!</string>
     <string name="show_favorites_toast">Show Favorites Collection</string>
     <string name="show_favorites">Show Favorites</string>
 </resources>
