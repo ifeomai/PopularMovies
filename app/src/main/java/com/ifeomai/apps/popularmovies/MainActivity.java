@@ -1,11 +1,15 @@
 package com.ifeomai.apps.popularmovies;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -58,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         } else {
             mSortOrder = (NetworkUtils.SortOrder) savedInstanceState.getSerializable(SORT_ORDER);
         }
-
         loadMovieData();
 
     }
@@ -67,17 +70,51 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     protected void onSaveInstanceState(Bundle outState) {
         outState.putSerializable(SORT_ORDER, mSortOrder);
         super.onSaveInstanceState(outState);
+
+        // save state of grid Layout Manager
+       // outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, mGridLayoutManager.onSaveInstanceState());
+
     }
+//
+//    @Override
+//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+//        super.onRestoreInstanceState(savedInstanceState);
+//
+//        //restore recycler view at same position
+//        if (savedInstanceState != null) {
+//            savedRecyclerLayoutState = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+//        }
+//
+//    }
+
 
     private void loadMovieData() {
-        if (isOnline()){
-            showMovieGridView();
-            new GetMoviesAsync(this).execute(mSortOrder);
-        }
-        else {
-            showErrorMessage();
-        }
+//        if (isOnline()){
+//            showMovieGridView();
+//            new GetMoviesAsync(this).execute(mSortOrder);
+//        }
+//        else {
+//            showErrorMessage();
+//        }
+//        return;
 
+
+        // ViewModel Changes
+        MainActivityViewModel model = ViewModelProviders.of(this).get(MainActivityViewModel.class);
+        model.getMoviesCollection().observe(this, new Observer<List<Map<String, String>>>() {
+            @Override
+            public void onChanged(@Nullable List<Map<String, String>> maps) {
+                mProgressLoading.setVisibility(View.INVISIBLE);
+                if (maps != null  && isOnline()) {
+                    showMovieGridView();
+                    List<Movie> movieData = Movie.createMovies(maps);
+                    mMovieAdapter.setMovieData(movieData);
+                } else {
+                    showErrorMessage();
+                }
+
+            }
+        });
     }
 
     @Override
@@ -106,10 +143,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
             // get a reference to the activity if it is still there
             MainActivity activity = activityReference.get();
             if (activity == null || activity.isFinishing()) return;
-
-            // modify the activity's UI
-            // TextView textView = activity.findViewById(R.id.textview);
-            //textView.setText(result);
 
             activity.mProgressLoading.setVisibility(View.VISIBLE);
         }

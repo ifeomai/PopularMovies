@@ -19,14 +19,14 @@ public class FavoritesProvider extends ContentProvider {
     private static final String PROVIDER_NAME = "com.ifeomai.apps.popularmovies";
     private static final String URL = "content://" + PROVIDER_NAME + "/favorites";
 
-    static final Uri CONTENT_URI = Uri.parse(URL);
-    static final String _ID = "_id";
-    static final String TITLE = "title";
-    static final String SYNOPSIS = "synopsis";
-    static final String USER_RATING = "user_rating";
-    static final String RELEASE_DATE = "release_date";
+    public static final Uri CONTENT_URI = Uri.parse(URL);
+    public static final String _ID = "_id";
+    public static final String TITLE = "title";
+    public static final String SYNOPSIS = "synopsis";
+    public static final String USER_RATING = "user_rating";
+    public static final String RELEASE_DATE = "release_date";
     //private static final String POSTER = "poster";
-    static final String POSTER_URL = "poster_url";
+    public static final String POSTER_URL = "poster_url";
 
     private static HashMap<String, String> FAVORITES_PROJECTION_MAP;
 

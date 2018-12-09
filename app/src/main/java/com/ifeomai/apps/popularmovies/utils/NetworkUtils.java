@@ -1,9 +1,14 @@
 package com.ifeomai.apps.popularmovies.utils;
 
+import android.arch.lifecycle.LiveData;
+import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 
 import com.ifeomai.apps.popularmovies.BuildConfig;
+import com.ifeomai.apps.popularmovies.FavoritesProvider;
+import com.ifeomai.apps.popularmovies.MainActivity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -62,7 +67,36 @@ public final class NetworkUtils {
 
         return parseMovieDbJSON(jsonResponse);
     }
+    public static List<Map<String, String>> getFavoriteCollection(Context context){
 
+        List<Map<String,String>> movieFavoriteCollection = new ArrayList<>();
+
+        Uri favorites = Uri.parse("content://com.ifeomai.apps.popularmovies/favorites");
+        Cursor c = context.getContentResolver().query(favorites, null, null, null, "_id");
+        try{
+            if (c.getCount() == 0){
+                return null;
+            }
+            if(c.moveToFirst()) {
+                do {
+                    Map<String, String> mapMovieData = new HashMap<>();
+                    mapMovieData.put("rating", c.getString(c.getColumnIndex(FavoritesProvider.USER_RATING)));
+                    mapMovieData.put("poster", c.getString(c.getColumnIndex(FavoritesProvider.POSTER_URL)));
+                    mapMovieData.put("title", c.getString(c.getColumnIndex(FavoritesProvider.TITLE)));
+                    mapMovieData.put("releaseDate", c.getString(c.getColumnIndex(FavoritesProvider.RELEASE_DATE)));
+                    mapMovieData.put("overview", c.getString(c.getColumnIndex(FavoritesProvider.SYNOPSIS)));
+                    mapMovieData.put("id", c.getString(c.getColumnIndex(FavoritesProvider._ID)));
+
+                    movieFavoriteCollection.add(mapMovieData);
+
+                } while (c.moveToNext());
+            }
+        } finally {
+            c.close();
+        }
+
+        return movieFavoriteCollection;
+    }
     private static List<Map<String,String>> parseMovieDbJSON(String jsonString) {
 
         List<Map<String,String>> movieCollection = new ArrayList<>();
