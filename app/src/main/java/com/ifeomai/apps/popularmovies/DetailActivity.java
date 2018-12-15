@@ -165,7 +165,7 @@ public class DetailActivity extends AppCompatActivity {
                     b_params.setMargins(30, 10, 20, 20);
                     b.setLayoutParams(b_params);
                     b.setText(String.format("Watch Trailer %s", Integer.toString(i + 1)));
-                    b.setId(i + 1001);
+                    b.setId(i);
                     b.setBackgroundColor(activity.getResources().getColor(R.color.colorPrimary));
                     b.setTextColor(activity.getResources().getColor(R.color.white));
                     b.setTextSize(18);
