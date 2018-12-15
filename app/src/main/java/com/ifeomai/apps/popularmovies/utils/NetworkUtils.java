@@ -9,6 +9,7 @@ import android.util.Log;
 import com.ifeomai.apps.popularmovies.BuildConfig;
 import com.ifeomai.apps.popularmovies.FavoritesProvider;
 import com.ifeomai.apps.popularmovies.MainActivity;
+import com.ifeomai.apps.popularmovies.Movie;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,7 +55,7 @@ public final class NetworkUtils {
         }
     }
 
-    public static List<Map<String,String>> getMovies(SortOrder order) {
+    public static List<Movie> getMovies(SortOrder order) {
 
         String jsonResponse ;
         try {
@@ -65,7 +66,7 @@ public final class NetworkUtils {
             return null;
         }
 
-        return parseMovieDbJSON(jsonResponse);
+        return Movie.createMovies(parseMovieDbJSON(jsonResponse));
     }
     public static List<Map<String, String>> getFavoriteCollection(Context context){
 

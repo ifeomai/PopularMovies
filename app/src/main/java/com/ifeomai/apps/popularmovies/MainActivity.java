@@ -71,44 +71,19 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         outState.putSerializable(SORT_ORDER, mSortOrder);
         super.onSaveInstanceState(outState);
 
-        // save state of grid Layout Manager
-       // outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, mGridLayoutManager.onSaveInstanceState());
-
     }
-//
-//    @Override
-//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-//        super.onRestoreInstanceState(savedInstanceState);
-//
-//        //restore recycler view at same position
-//        if (savedInstanceState != null) {
-//            savedRecyclerLayoutState = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
-//        }
-//
-//    }
 
 
     private void loadMovieData() {
-//        if (isOnline()){
-//            showMovieGridView();
-//            new GetMoviesAsync(this).execute(mSortOrder);
-//        }
-//        else {
-//            showErrorMessage();
-//        }
-//        return;
-
-
         // ViewModel Changes
         MainActivityViewModel model = ViewModelProviders.of(this).get(MainActivityViewModel.class);
-        model.getMoviesCollection().observe(this, new Observer<List<Map<String, String>>>() {
+        model.getMoviesCollection().observe(this, new Observer<List<Movie>>() {
             @Override
-            public void onChanged(@Nullable List<Map<String, String>> maps) {
+            public void onChanged(@Nullable List<Movie> movies) {
                 mProgressLoading.setVisibility(View.INVISIBLE);
-                if (maps != null  && isOnline()) {
+                if (movies != null  && isOnline()) {
                     showMovieGridView();
-                    List<Movie> movieData = Movie.createMovies(maps);
-                    mMovieAdapter.setMovieData(movieData);
+                    mMovieAdapter.setMovieData(movies);
                 } else {
                     showErrorMessage();
                 }
@@ -124,90 +99,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         Intent intentStartDetail = new Intent(context, destinationClass);
         intentStartDetail.putExtra("Movie", movie);
         startActivity(intentStartDetail);
-    }
-
-
-    static class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
-
-        private final WeakReference<MainActivity> activityReference;
-
-        // only retain a weak reference to the activity
-        GetMoviesAsync(MainActivity context) {
-            activityReference = new WeakReference<>(context);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            // get a reference to the activity if it is still there
-            MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return;
-
-            activity.mProgressLoading.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected List<Map<String,String>> doInBackground(NetworkUtils.SortOrder... sortOrder) {
-            // get a reference to the activity if it is still there
-            MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return null;
-            if(activity.mSortOrder == NetworkUtils.SortOrder.FAVORITES) {
-                return getFavoriteCollection();
-            }
-            return NetworkUtils.getMovies(sortOrder[0]);
-        }
-
-        @Override
-        protected void onPostExecute(List<Map<String,String>> moviesCollection) {
-
-            // get a reference to the activity if it is still there
-            MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return;
-
-            activity.mProgressLoading.setVisibility(View.INVISIBLE);
-            if (moviesCollection != null) {
-                activity.showMovieGridView();
-                List<Movie> movieData = Movie.createMovies(moviesCollection);
-                activity.mMovieAdapter.setMovieData(movieData);
-            } else {
-                activity.showErrorMessage();
-            }
-        }
-
-        List<Map<String, String>> getFavoriteCollection(){
-            // get a reference to the activity if it is still there
-            MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return null;
-
-            List<Map<String,String>> movieCollection = new ArrayList<>();
-
-            Uri favorites = Uri.parse("content://com.ifeomai.apps.popularmovies/favorites");
-            Cursor c = activity.getContentResolver().query(favorites, null, null, null, "_id");
-            try{
-                if (c.getCount() == 0){
-                    return null;
-                }
-            if(c.moveToFirst()) {
-                do {
-                    Map<String, String> mapMovieData = new HashMap<>();
-                    mapMovieData.put("rating", c.getString(c.getColumnIndex(FavoritesProvider.USER_RATING)));
-                    mapMovieData.put("poster", c.getString(c.getColumnIndex(FavoritesProvider.POSTER_URL)));
-                    mapMovieData.put("title", c.getString(c.getColumnIndex(FavoritesProvider.TITLE)));
-                    mapMovieData.put("releaseDate", c.getString(c.getColumnIndex(FavoritesProvider.RELEASE_DATE)));
-                    mapMovieData.put("overview", c.getString(c.getColumnIndex(FavoritesProvider.SYNOPSIS)));
-                    mapMovieData.put("id", c.getString(c.getColumnIndex(FavoritesProvider._ID)));
-
-                    movieCollection.add(mapMovieData);
-
-                } while (c.moveToNext());
-            }
-            } finally {
-                c.close();
-            }
-
-            return movieCollection;
-        }
     }
 
     private void showMovieGridView() {

@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivityViewModel extends ViewModel {
-    private MutableLiveData<List<Map<String,String>>> moviesCollection;
+    private MutableLiveData<List<Movie>> moviesCollection;
 
-    public MutableLiveData<List<Map<String, String>>> getMoviesCollection() {
+    public MutableLiveData<List<Movie>> getMoviesCollection() {
         if (moviesCollection == null){
             moviesCollection = new MutableLiveData<>();
         }
@@ -23,13 +23,13 @@ public class MainActivityViewModel extends ViewModel {
 
 
     public MainActivityViewModel() {
-        new GetMoviesAsync().execute();
+        new GetMoviesAsync().execute(NetworkUtils.SortOrder.POPULAR);
         //moviesCollection.setValue(NetworkUtils.getMovies(NetworkUtils.SortOrder.POPULAR));
     }
 
 
 
-    private class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Map<String,String>>> {
+    private class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Movie>> {
 
 
         @Override
@@ -38,12 +38,13 @@ public class MainActivityViewModel extends ViewModel {
         }
 
         @Override
-        protected List<Map<String, String>> doInBackground(NetworkUtils.SortOrder... sortOrder) {
-            return NetworkUtils.getMovies(NetworkUtils.SortOrder.POPULAR);
+        protected List<Movie> doInBackground(NetworkUtils.SortOrder... sortOrder) {
+            NetworkUtils.SortOrder option = sortOrder[0];
+            return NetworkUtils.getMovies(option);
         }
 
         @Override
-        protected void onPostExecute(List<Map<String, String>> maps) {
+        protected void onPostExecute(List<Movie> maps) {
             //super.onPostExecute(maps);
             moviesCollection.setValue(maps);
         }
