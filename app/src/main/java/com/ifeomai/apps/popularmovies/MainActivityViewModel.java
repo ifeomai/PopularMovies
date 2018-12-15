@@ -9,7 +9,6 @@ import android.os.AsyncTask;
 import com.ifeomai.apps.popularmovies.utils.NetworkUtils;
 
 import java.util.List;
-import java.util.Map;
 
 public class MainActivityViewModel extends ViewModel {
     private MutableLiveData<List<Movie>> moviesCollection;
@@ -20,6 +19,14 @@ public class MainActivityViewModel extends ViewModel {
         }
         return moviesCollection;
     }
+    public MutableLiveData<List<Movie>> getMoviesCollectionByRating() {
+        if (moviesCollection == null){
+            moviesCollection = new MutableLiveData<>();
+        }
+        new GetMoviesAsync().execute(NetworkUtils.SortOrder.RATING);
+        return moviesCollection;
+    }
+
 
 
     public MainActivityViewModel() {
