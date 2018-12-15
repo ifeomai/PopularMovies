@@ -12,4 +12,5 @@
     <string name="fav_exists">Removed from favorites!</string>
     <string name="show_favorites_toast">Show Favorites Collection</string>
     <string name="show_favorites">Show Favorites</string>
+    <string name="title_activity_favorite">FavoriteActivity</string>
 </resources>

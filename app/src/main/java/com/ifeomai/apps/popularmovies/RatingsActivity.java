@@ -1,6 +1,5 @@
 package com.ifeomai.apps.popularmovies;
 
-import android.app.Activity;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -32,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.ItemClickListener {
+public class RatingsActivity extends AppCompatActivity implements MovieAdapter.ItemClickListener {
 
 
     private RecyclerView mRecyclerViewMovies;
@@ -41,13 +40,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private ProgressBar mProgressLoading;
     private MovieAdapter mMovieAdapter;
     private TextView mErrorMessageDisplay;
-    private MainActivityViewModel model;
+    private RatingsActivityViewModel model;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_ratings);
         mRecyclerViewMovies = findViewById(R.id.rv_movies);
         mErrorMessageDisplay = findViewById(R.id.tv_error_message);
 
@@ -64,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         } else {
             mSortOrder = (NetworkUtils.SortOrder) savedInstanceState.getSerializable(SORT_ORDER);
         }
-        model = ViewModelProviders.of(this).get(MainActivityViewModel.class);
+        model = ViewModelProviders.of(this).get(RatingsActivityViewModel.class);
         loadMovieData();
 
     }
@@ -80,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private void loadMovieData() {
         // ViewModel Changes
 
-        model.getMoviesCollection().observe(this, new Observer<List<Movie>>() {
+        model.getMoviesCollectionByRating().observe(this, new Observer<List<Movie>>() {
             @Override
             public void onChanged(@Nullable List<Movie> movies) {
                 mProgressLoading.setVisibility(View.INVISIBLE);
@@ -129,25 +128,19 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
 
         switch (id) {
             case R.id.action_sort_popular: {
-                mSortOrder = NetworkUtils.SortOrder.POPULAR;
+                startActivity(new Intent(RatingsActivity.this, MainActivity.class));
+                break;
+            }
+            case R.id.action_sort_rating: {
+                mSortOrder = NetworkUtils.SortOrder.RATING;
                 Context context = this;
-                Toast.makeText(context, getString(R.string.sort_popular_toast), Toast.LENGTH_SHORT)
+                Toast.makeText(context, getString(R.string.sort_rating_toast), Toast.LENGTH_SHORT)
                         .show();
                 loadMovieData();
                 return true;
             }
-            case R.id.action_sort_rating: {
-                startActivity(new Intent(MainActivity.this, RatingsActivity.class));
-                break;
-            }
             case R.id.action_show_favorites: {
-//                mSortOrder = NetworkUtils.SortOrder.FAVORITES;
-//                Context context = this;
-//                Toast.makeText(context, getString(R.string.show_favorites_toast), Toast.LENGTH_SHORT)
-//                        .show();
-//                loadMovieData();
-//                return true;
-                startActivity(new Intent(MainActivity.this, FavoriteActivity.class));
+                startActivity(new Intent(RatingsActivity.this, FavoriteActivity.class));
                 break;
             }
         }
