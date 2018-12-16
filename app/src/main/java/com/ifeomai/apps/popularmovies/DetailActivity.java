@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ifeomai.apps.popularmovies.data.AppDatabase;
 import com.ifeomai.apps.popularmovies.utils.NetworkUtils;
 import com.ifeomai.apps.popularmovies.utils.Review;
 import com.ifeomai.apps.popularmovies.utils.Trailer;
@@ -40,10 +41,17 @@ public class DetailActivity extends AppCompatActivity {
     private String mMovieId ;
     private  String mPosterUrl;
 
+    private AppDatabase mDb;
+    private Button mMarkFavoriteButton;
+    private Boolean mIsAFavoriteMovie = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+
+        //Initialize the Database
+        mDb = AppDatabase.getInstance(getApplicationContext());
 
         mRelease = findViewById(R.id.tv_release_date);
         mOverviewDisplay = findViewById(R.id.tv_display_movie_detail);
@@ -51,15 +59,16 @@ public class DetailActivity extends AppCompatActivity {
         mPoster =  findViewById(R.id.iv_detail_poster);
         mTitle =  findViewById(R.id.tv_display_movie_title);
         mRootLinearLayout = findViewById(R.id.ll_root);
+        mMarkFavoriteButton = findViewById(R.id.markFavorite_button);
 
-        Button mMarkFavoriteButton = findViewById(R.id.markFavorite_button);
+        setupUI();
+        checkIfFavorite();
         mMarkFavoriteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addToFavorites();
+                addToFavoritesDb(movie);
             }
         });
-        setupUI();
     }
 
     private void setupUI(){
@@ -85,10 +94,6 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-//    @Override
-//    public void onClick(View v) {
-//
-//    }
 
     private void addToFavorites() {
         ContentValues values = new ContentValues();
@@ -107,6 +112,56 @@ public class DetailActivity extends AppCompatActivity {
             Toast.makeText(DetailActivity.this, R.string.fav_exists, Toast.LENGTH_SHORT).show();
         } else
             Toast.makeText(DetailActivity.this, R.string.fav_success, Toast.LENGTH_SHORT).show();
+    }
+
+    private void addToFavoritesDb(Movie movie){
+        final Movie movieToAdd = movie;
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                //Insert into the Room DB
+                Movie favoriteMovie = mDb.movieDao().loadFavoriteById(movieToAdd.mMovieId);
+                if (favoriteMovie == null) {
+                    mDb.movieDao().insertFavorite(movieToAdd);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMarkFavoriteButton.setText(R.string.action_fav_remove);
+                            Toast.makeText(getApplicationContext(), R.string.fav_success, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                else {
+                    mDb.movieDao().deleteFavorite(movieToAdd);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMarkFavoriteButton.setText(R.string.action_share);
+                            Toast.makeText(getApplicationContext(), R.string.fav_exists, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void checkIfFavorite(){
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                Movie favoriteMovie = mDb.movieDao().loadFavoriteById(movie.mMovieId);
+                if (favoriteMovie != null) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Update btn to show it is a favorite
+                            mIsAFavoriteMovie = true;
+                            mMarkFavoriteButton.setText(R.string.action_fav_remove);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     static class FetchMovieDetailsAsync extends AsyncTask<Void, Void, Void> {
