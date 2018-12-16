@@ -1,6 +1,7 @@
 package com.ifeomai.apps.popularmovies;
 
 import android.app.Activity;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -24,6 +25,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ifeomai.apps.popularmovies.data.AppDatabase;
 import com.ifeomai.apps.popularmovies.utils.NetworkUtils;
 
 import java.lang.ref.WeakReference;
@@ -43,12 +45,18 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private TextView mErrorMessageDisplay;
     private MainActivityViewModel model;
 
+    private AppDatabase mDb;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Initialize the Database
+        mDb = AppDatabase.getInstance(getApplicationContext());
+
         mRecyclerViewMovies = findViewById(R.id.rv_movies);
         mErrorMessageDisplay = findViewById(R.id.tv_error_message);
 
@@ -68,6 +76,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mSortOrder == NetworkUtils.SortOrder.FAVORITES) {
+            retrieveMovies();
+        }
+    }
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putSerializable(SORT_ORDER, mSortOrder);
@@ -142,13 +157,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
                 break;
             }
             case R.id.action_show_favorites: {
-//                mSortOrder = NetworkUtils.SortOrder.FAVORITES;
-//                Context context = this;
-//                Toast.makeText(context, getString(R.string.show_favorites_toast), Toast.LENGTH_SHORT)
-//                        .show();
-//                loadMovieData();
-//                return true;
-                startActivity(new Intent(MainActivity.this, FavoriteActivity.class));
+                mSortOrder = NetworkUtils.SortOrder.FAVORITES;
+                Toast.makeText(this, getString(R.string.show_favorites_toast), Toast.LENGTH_SHORT).show();
+                new GetMoviesAsync(this).execute(mSortOrder);
                 break;
             }
         }
@@ -191,11 +202,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         @Override
         protected List<Movie> doInBackground(NetworkUtils.SortOrder... sortOrder) {
             // get a reference to the activity if it is still there
-           /* MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return null;*/
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return null;
             NetworkUtils.SortOrder option = sortOrder[0];
             if(option == NetworkUtils.SortOrder.FAVORITES) {
-                return Movie.createMovies(getFavoriteCollection());
+                return activity.mDb.movieDao().loadFavorites();
             }
             return NetworkUtils.getMovies(option);
         }
@@ -206,54 +217,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
             // get a reference to the activity if it is still there
             MainActivity activity = activityReference.get();
             if (activity == null || activity.isFinishing()) return;
-
-            /*activity.mProgressLoading.setVisibility(View.INVISIBLE);
-            if (moviesCollection != null) {
-                activity.showMovieGridView();
-                //List<Movie> movieData = Movie.createMovies(moviesCollection);
-                activity.mMovieAdapter.setMovieData(moviesCollection);
-            } else {
-                activity.showErrorMessage();
-            }*/
             activity.model.getMoviesCollection().setValue(moviesCollection);
-
-
-        }
-
-        List<Map<String, String>> getFavoriteCollection(){
-            // get a reference to the activity if it is still there
-            MainActivity activity = activityReference.get();
-            if (activity == null || activity.isFinishing()) return null;
-
-            List<Map<String,String>> movieCollection = new ArrayList<>();
-
-            Uri favorites = Uri.parse("content://com.ifeomai.apps.popularmovies/favorites");
-            Cursor c = activity.getContentResolver().query(favorites, null, null, null, "_id");
-            try{
-                if (c.getCount() == 0){
-                    return null;
-                }
-                if(c.moveToFirst()) {
-                    do {
-                        Map<String, String> mapMovieData = new HashMap<>();
-                        mapMovieData.put("rating", c.getString(c.getColumnIndex(FavoritesProvider.USER_RATING)));
-                        mapMovieData.put("poster", c.getString(c.getColumnIndex(FavoritesProvider.POSTER_URL)));
-                        mapMovieData.put("title", c.getString(c.getColumnIndex(FavoritesProvider.TITLE)));
-                        mapMovieData.put("releaseDate", c.getString(c.getColumnIndex(FavoritesProvider.RELEASE_DATE)));
-                        mapMovieData.put("overview", c.getString(c.getColumnIndex(FavoritesProvider.SYNOPSIS)));
-                        mapMovieData.put("id", c.getString(c.getColumnIndex(FavoritesProvider._ID)));
-
-                        movieCollection.add(mapMovieData);
-
-                    } while (c.moveToNext());
-                }
-            } finally {
-                c.close();
-            }
-
-            return movieCollection;
         }
     }
 
-
+private void retrieveMovies(){
+        final LiveData<List<Movie>> movies = mDb.movieDao().loadFavoritesLive();
+        movies.observe(this, new Observer<List<Movie>>() {
+            @Override
+            public void onChanged(@Nullable List<Movie> movies) {
+                mMovieAdapter.setMovieData(movies);
+            }
+        });
+}
 }

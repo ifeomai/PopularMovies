@@ -95,7 +95,7 @@ public class DetailActivity extends AppCompatActivity {
     }
 
 
-    private void addToFavorites() {
+  /*  private void addToFavorites() {
         ContentValues values = new ContentValues();
         values.put(FavoritesProvider._ID, mMovieId);
         values.put(FavoritesProvider.TITLE, mTitle.getText().toString());
@@ -112,7 +112,7 @@ public class DetailActivity extends AppCompatActivity {
             Toast.makeText(DetailActivity.this, R.string.fav_exists, Toast.LENGTH_SHORT).show();
         } else
             Toast.makeText(DetailActivity.this, R.string.fav_success, Toast.LENGTH_SHORT).show();
-    }
+    }*/
 
     private void addToFavoritesDb(Movie movie){
         final Movie movieToAdd = movie;
@@ -120,8 +120,8 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void run() {
                 //Insert into the Room DB
-                Movie favoriteMovie = mDb.movieDao().loadFavoriteById(movieToAdd.mMovieId);
-                if (favoriteMovie == null) {
+               // Movie favoriteMovie = mDb.movieDao().loadFavoriteById(movieToAdd.mMovieId);
+                if (!mIsAFavoriteMovie) {
                     mDb.movieDao().insertFavorite(movieToAdd);
                     runOnUiThread(new Runnable() {
                         @Override

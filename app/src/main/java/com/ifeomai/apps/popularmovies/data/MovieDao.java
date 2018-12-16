@@ -11,7 +11,10 @@ import android.arch.persistence.room.Query;
 public interface MovieDao {
 
     @Query("SELECT * FROM movie")
-    LiveData<List<Movie>> loadFavorites();
+    LiveData<List<Movie>> loadFavoritesLive();
+
+    @Query("SELECT * FROM movie")
+    List<Movie> loadFavorites();
 
     @Insert
     void insertFavorite(Movie favoriteMovie);
