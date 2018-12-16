@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
     private MainActivityViewModel model;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +57,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         mRecyclerViewMovies.setHasFixedSize(true);
         mMovieAdapter = new MovieAdapter();
         mMovieAdapter.setClickListener(this);
-        mRecyclerViewMovies.setAdapter(mMovieAdapter);
         mProgressLoading =  findViewById(R.id.pb_loading);
 
         if (savedInstanceState == null) {
@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         } else {
             mSortOrder = (NetworkUtils.SortOrder) savedInstanceState.getSerializable(SORT_ORDER);
         }
-        model = ViewModelProviders.of(this).get(MainActivityViewModel.class);
         loadMovieData();
 
     }
@@ -79,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
 
     private void loadMovieData() {
         // ViewModel Changes
-
+        model = ViewModelProviders.of(this).get(MainActivityViewModel.class);
         model.getMoviesCollection().observe(this, new Observer<List<Movie>>() {
             @Override
             public void onChanged(@Nullable List<Movie> movies) {
@@ -87,10 +86,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
                 if (movies != null  && isOnline()) {
                     showMovieGridView();
                     mMovieAdapter.setMovieData(movies);
+                    mRecyclerViewMovies.setAdapter(mMovieAdapter);
                 } else {
                     showErrorMessage();
                 }
-
             }
         });
     }
@@ -130,14 +129,16 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         switch (id) {
             case R.id.action_sort_popular: {
                 mSortOrder = NetworkUtils.SortOrder.POPULAR;
-                Context context = this;
-                Toast.makeText(context, getString(R.string.sort_popular_toast), Toast.LENGTH_SHORT)
+                Toast.makeText(this, getString(R.string.sort_popular_toast), Toast.LENGTH_SHORT)
                         .show();
-                loadMovieData();
-                return true;
+                new GetMoviesAsync(this).execute(mSortOrder);
+                break;
             }
             case R.id.action_sort_rating: {
-                startActivity(new Intent(MainActivity.this, RatingsActivity.class));
+                mSortOrder = NetworkUtils.SortOrder.RATING;
+               Toast.makeText(this, getString(R.string.sort_rating_toast), Toast.LENGTH_SHORT)
+                       .show();
+                new GetMoviesAsync(this).execute(mSortOrder);
                 break;
             }
             case R.id.action_show_favorites: {
@@ -165,4 +166,94 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Item
         return cm.getActiveNetworkInfo() != null &&
                 cm.getActiveNetworkInfo().isConnectedOrConnecting();
     }
+
+
+    static class GetMoviesAsync extends AsyncTask<NetworkUtils.SortOrder, Void, List<Movie>> {
+
+        private final WeakReference<MainActivity> activityReference;
+
+        // only retain a weak reference to the activity
+        GetMoviesAsync(MainActivity context) {
+            activityReference = new WeakReference<>(context);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return;
+
+            activity.mProgressLoading.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected List<Movie> doInBackground(NetworkUtils.SortOrder... sortOrder) {
+            // get a reference to the activity if it is still there
+           /* MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return null;*/
+            NetworkUtils.SortOrder option = sortOrder[0];
+            if(option == NetworkUtils.SortOrder.FAVORITES) {
+                return Movie.createMovies(getFavoriteCollection());
+            }
+            return NetworkUtils.getMovies(option);
+        }
+
+        @Override
+        protected void onPostExecute(List<Movie> moviesCollection) {
+
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return;
+
+            /*activity.mProgressLoading.setVisibility(View.INVISIBLE);
+            if (moviesCollection != null) {
+                activity.showMovieGridView();
+                //List<Movie> movieData = Movie.createMovies(moviesCollection);
+                activity.mMovieAdapter.setMovieData(moviesCollection);
+            } else {
+                activity.showErrorMessage();
+            }*/
+            activity.model.getMoviesCollection().setValue(moviesCollection);
+
+
+        }
+
+        List<Map<String, String>> getFavoriteCollection(){
+            // get a reference to the activity if it is still there
+            MainActivity activity = activityReference.get();
+            if (activity == null || activity.isFinishing()) return null;
+
+            List<Map<String,String>> movieCollection = new ArrayList<>();
+
+            Uri favorites = Uri.parse("content://com.ifeomai.apps.popularmovies/favorites");
+            Cursor c = activity.getContentResolver().query(favorites, null, null, null, "_id");
+            try{
+                if (c.getCount() == 0){
+                    return null;
+                }
+                if(c.moveToFirst()) {
+                    do {
+                        Map<String, String> mapMovieData = new HashMap<>();
+                        mapMovieData.put("rating", c.getString(c.getColumnIndex(FavoritesProvider.USER_RATING)));
+                        mapMovieData.put("poster", c.getString(c.getColumnIndex(FavoritesProvider.POSTER_URL)));
+                        mapMovieData.put("title", c.getString(c.getColumnIndex(FavoritesProvider.TITLE)));
+                        mapMovieData.put("releaseDate", c.getString(c.getColumnIndex(FavoritesProvider.RELEASE_DATE)));
+                        mapMovieData.put("overview", c.getString(c.getColumnIndex(FavoritesProvider.SYNOPSIS)));
+                        mapMovieData.put("id", c.getString(c.getColumnIndex(FavoritesProvider._ID)));
+
+                        movieCollection.add(mapMovieData);
+
+                    } while (c.moveToNext());
+                }
+            } finally {
+                c.close();
+            }
+
+            return movieCollection;
+        }
+    }
+
+
 }
